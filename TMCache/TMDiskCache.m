@@ -38,42 +38,50 @@ NSString * const TMDiskCacheSharedName = @"TMDiskCacheShared";
 
 #pragma mark - Initialization -
 
-- (instancetype)initWithName:(NSString *)name
-{
-    if (!name)
-        return nil;
+- (instancetype)initWithName:(NSString *)name {
+	return [self initWithName:name directory:nil];
+}
 
-    if (self = [super init]) {
-        _name = [name copy];
-        _queue = [TMDiskCache sharedQueue];
+- (instancetype)initWithName:(NSString *)name directory:(NSString *)path {
+	if (!name)
+		return nil;
 
-        _willAddObjectBlock = nil;
-        _willRemoveObjectBlock = nil;
-        _willRemoveAllObjectsBlock = nil;
-        _didAddObjectBlock = nil;
-        _didRemoveObjectBlock = nil;
-        _didRemoveAllObjectsBlock = nil;
-        
-        _byteCount = 0;
-        _byteLimit = 0;
-        _ageLimit = 0.0;
+	if (self = [super init]) {
+		_name = [name copy];
+		_queue = [TMDiskCache sharedQueue];
 
-        _dates = [[NSMutableDictionary alloc] init];
-        _sizes = [[NSMutableDictionary alloc] init];
+		_willAddObjectBlock = nil;
+		_willRemoveObjectBlock = nil;
+		_willRemoveAllObjectsBlock = nil;
+		_didAddObjectBlock = nil;
+		_didRemoveObjectBlock = nil;
+		_didRemoveAllObjectsBlock = nil;
 
-        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
-        NSString *pathComponent = [[NSString alloc] initWithFormat:@"%@.%@", TMDiskCachePrefix, _name];
-        _cacheURL = [NSURL fileURLWithPathComponents:@[ [paths objectAtIndex:0], pathComponent ]];
+		_byteCount = 0;
+		_byteLimit = 0;
+		_ageLimit = 0.0;
 
-        __weak TMDiskCache *weakSelf = self;
+		_dates = [[NSMutableDictionary alloc] init];
+		_sizes = [[NSMutableDictionary alloc] init];
 
-        dispatch_async(_queue, ^{
-            TMDiskCache *strongSelf = weakSelf;
-            [strongSelf createCacheDirectory];
-            [strongSelf initializeDiskProperties];
-        });
-    }
-    return self;
+		// TODO: extract path
+		if (path) {
+			_cacheURL = [NSURL fileURLWithPath:path];
+		} else {
+			NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+			NSString *pathComponent = [[NSString alloc] initWithFormat:@"%@.%@", TMDiskCachePrefix, _name];
+			_cacheURL = [NSURL fileURLWithPathComponents:@[[paths objectAtIndex:0], pathComponent]];
+		}
+
+		__weak TMDiskCache *weakSelf = self;
+
+		dispatch_async(_queue, ^{
+			TMDiskCache *strongSelf = weakSelf;
+			[strongSelf createCacheDirectory];
+			[strongSelf initializeDiskProperties];
+		});
+	}
+	return self;
 }
 
 - (NSString *)description
